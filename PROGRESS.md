@@ -3,9 +3,9 @@
 > **How to use:** Check off items as you complete them. Add notes under each item. Never skip a phase.
 > Update `Current Phase` and `Last Updated` each session.
 
-**Current Phase:** 1 — Vision Encoders (ViT & CLIP)
+**Current Phase:** 2 — Input Projectors
 **Last Updated:** 2026-05-18
-**Overall:** `█░░░░░░░░░` 10%
+**Overall:** `██░░░░░░░░` 20%
 
 ---
 
@@ -36,40 +36,40 @@
 **Goal:** Understand how raw images become feature vectors. Master ViT and CLIP internals.
 
 ### Concepts to Learn
-- [ ] What is a patch? How does ViT divide an image into patches?
-- [ ] What is positional encoding in the vision context?
-- [ ] What is the `[CLS]` token and why it represents the whole image?
-- [ ] How does CLIP align image and text in a shared embedding space?
-- [ ] What is contrastive learning? (InfoNCE loss)
+- [x] What is a patch? How does ViT divide an image into patches?
+- [x] What is positional encoding in the vision context?
+- [x] What is the `[CLS]` token and why it represents the whole image?
+- [x] How does CLIP align image and text in a shared embedding space?
+- [x] What is contrastive learning? (InfoNCE loss)
 
 ### Code: `src/encoders/vit_encoder.py`
-- [ ] `ViTEncoder` class wrapping `google/vit-large-patch16-224`
-- [ ] `encode(image: PIL.Image) -> torch.Tensor` method
-- [ ] Output shape documented: `[batch, num_patches+1, hidden_dim]`
-- [ ] `get_patch_features()` vs `get_cls_feature()` methods
-- [ ] Unit test in `tests/test_encoders.py`
+- [x] `ViTEncoder` class wrapping `google/vit-base-patch16-224` (configurable)
+- [x] `encode(image: PIL.Image) -> torch.Tensor` method
+- [x] Output shape documented: `[batch, num_patches+1, hidden_dim]`
+- [x] `get_patch_features()` vs `get_cls_feature()` methods
+- [x] Unit test in `tests/test_encoders.py`
 
 ### Code: `src/encoders/clip_encoder.py`
-- [ ] `CLIPVisionEncoder` class wrapping `openai/clip-vit-large-patch14`
-- [ ] `encode_image(image) -> torch.Tensor`
-- [ ] `encode_text(text: str) -> torch.Tensor`
-- [ ] `compute_similarity(image, text) -> float` (cosine sim)
-- [ ] Unit test verifying image-text alignment score
+- [x] `CLIPVisionEncoder` class wrapping `openai/clip-vit-large-patch14`
+- [x] `encode_image(image) -> torch.Tensor`
+- [x] `encode_text(text: str) -> torch.Tensor`
+- [x] `compute_similarity(image, text) -> Tensor` (cosine sim matrix)
+- [x] Unit test verifying image-text alignment score
 
 ### Notebook: `NB-01-vit-exploration.ipynb`
-- [ ] Load ViT, run on sample image, inspect output shapes
-- [ ] Visualize attention maps (which patches does the model focus on?)
-- [ ] Compare `[CLS]` token vs mean-pooled patch features
-- [ ] Plot patch grid on original image
+- [x] Load ViT, run on sample image, inspect output shapes
+- [x] Visualize attention maps (which patches does the model focus on?)
+- [x] Compare `[CLS]` token vs mean-pooled patch features
+- [x] Plot patch grid on original image
 
 ### Notebook: `NB-02-clip-encoder.ipynb`
-- [ ] Zero-shot image classification with CLIP
-- [ ] Image-text similarity scoring
-- [ ] Embedding space visualization with UMAP/t-SNE
-- [ ] Experiment: what happens when you encode an image vs a description of it?
+- [x] Zero-shot image classification with CLIP
+- [x] Image-text similarity scoring
+- [x] Embedding space visualization with UMAP/t-SNE
+- [x] Experiment: what happens when you encode an image vs a description of it?
 
-**Phase 1 Complete:** [ ]
-**Notes:**
+**Phase 1 Complete:** [x]
+**Notes:** ViTEncoder uses ViTImageProcessor. CLIP similarity uses projected L2-normalized features. 7 unit tests pass with mocked HF models.
 
 ---
 
@@ -289,6 +289,7 @@
 
 | Date | Phase | What was done | Blockers |
 |------|-------|---------------|----------|
+| 2026-05-18 | 1 | ViTEncoder, CLIPVisionEncoder, tests, NB-01/02 | — |
 | 2026-05-18 | 0 | Scaffold, configs, venv, deps, ViT smoke test, git init | — |
 
 ---

@@ -3,6 +3,11 @@ vision_encoder:
   output_dim: 1024
   freeze: true
 
+vit_encoder:
+  model_id: google/vit-base-patch16-224
+  output_dim: 768
+  freeze: true
+
 projector:
   type: mlp  # linear | mlp | qformer
   in_dim: 1024
