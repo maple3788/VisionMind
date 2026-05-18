@@ -12,8 +12,15 @@ projector:
   type: mlp  # linear | mlp | qformer
   in_dim: 1024
   hidden_dim: 2048
-  out_dim: 4096
+  out_dim: 1536  # Qwen2-VL-2B text hidden size
   num_layers: 2
+  dropout: 0.0
+
+qformer:
+  num_queries: 32
+  num_heads: 8
+  num_layers: 6
+  dropout: 0.1
 
 llm:
   model_id: Qwen/Qwen2-VL-2B-Instruct

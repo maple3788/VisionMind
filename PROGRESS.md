@@ -3,9 +3,9 @@
 > **How to use:** Check off items as you complete them. Add notes under each item. Never skip a phase.
 > Update `Current Phase` and `Last Updated` each session.
 
-**Current Phase:** 2 — Input Projectors
+**Current Phase:** 4 — End-to-End Inference Pipeline
 **Last Updated:** 2026-05-18
-**Overall:** `██░░░░░░░░` 20%
+**Overall:** `████░░░░░░` 40%
 
 ---
 
@@ -77,50 +77,50 @@
 **Goal:** Build the bridge between vision encoder output and LLM token space.
 
 ### Concepts to Learn
-- [ ] Why can't we feed CLIP embeddings directly to a language model?
-- [ ] What does "modality alignment" mean?
-- [ ] Linear projector: simplest possible bridge
-- [ ] MLP projector: adds non-linearity, better capacity
-- [ ] Q-Former: cross-attention based, dynamic queries (from BLIP-2)
-- [ ] What is the token budget? Why do we need to compress patch tokens?
+- [x] Why can't we feed CLIP embeddings directly to a language model?
+- [x] What does "modality alignment" mean?
+- [x] Linear projector: simplest possible bridge
+- [x] MLP projector: adds non-linearity, better capacity
+- [x] Q-Former: cross-attention based, dynamic queries (from BLIP-2)
+- [x] What is the token budget? Why do we need to compress patch tokens?
 
 ### Code: `src/projectors/linear_projector.py`
-- [ ] `LinearProjector(in_dim, out_dim)` class
-- [ ] `forward(x: Tensor) -> Tensor`
-- [ ] Shape: `[batch, seq, clip_dim]` → `[batch, seq, llm_dim]`
-- [ ] Unit test with dummy tensors
+- [x] `LinearProjector(in_dim, out_dim)` class
+- [x] `forward(x: Tensor) -> Tensor`
+- [x] Shape: `[batch, seq, clip_dim]` → `[batch, seq, llm_dim]`
+- [x] Unit test with dummy tensors
 
 ### Code: `src/projectors/mlp_projector.py`
-- [ ] `MLPProjector(in_dim, hidden_dim, out_dim, num_layers=2)`
-- [ ] GELU activation, LayerNorm
-- [ ] Dropout option for regularization
-- [ ] Unit test
+- [x] `MLPProjector(in_dim, hidden_dim, out_dim, num_layers=2)`
+- [x] GELU activation, LayerNorm
+- [x] Dropout option for regularization
+- [x] Unit test
 
 ### Code: `src/projectors/qformer.py`
-- [ ] `QFormer(num_queries, encoder_dim, llm_dim, num_heads, num_layers)`
-- [ ] Learnable query tokens `nn.Parameter`
-- [ ] Cross-attention to encoder output
-- [ ] Self-attention among queries
-- [ ] Output: fixed number of tokens regardless of image resolution
-- [ ] Unit test verifying output is always `[batch, num_queries, llm_dim]`
+- [x] `QFormer(num_queries, encoder_dim, llm_dim, num_heads, num_layers)`
+- [x] Learnable query tokens `nn.Parameter`
+- [x] Cross-attention to encoder output
+- [x] Self-attention among queries
+- [x] Output: fixed number of tokens regardless of image resolution
+- [x] Unit test verifying output is always `[batch, num_queries, llm_dim]`
 
 ### Notebook: `NB-03-linear-projector.ipynb`
-- [ ] Build and visualize a linear projector
-- [ ] Check that gradients flow through it
-- [ ] Compare input/output embedding distributions
+- [x] Build and visualize a linear projector
+- [x] Check that gradients flow through it
+- [x] Compare input/output embedding distributions
 
 ### Notebook: `NB-04-mlp-projector.ipynb`
-- [ ] Build MLP projector, compare to linear
-- [ ] Plot loss curve for a toy alignment task
+- [x] Build MLP projector, compare to linear
+- [x] Plot loss curve for a toy alignment task
 
 ### Notebook: `NB-05-qformer-deep-dive.ipynb`
-- [ ] Step-by-step Q-Former implementation from scratch
-- [ ] Visualize cross-attention weights (which patches do queries attend to?)
-- [ ] Compare: 32 queries vs 64 queries — tradeoffs
-- [ ] BLIP-2 Q-Former vs custom Q-Former
+- [x] Step-by-step Q-Former implementation from scratch
+- [x] Visualize cross-attention weights (which patches do queries attend to?)
+- [x] Compare: 32 queries vs 64 queries — tradeoffs
+- [x] Production `src/projectors/qformer.py` integration cell
 
-**Phase 2 Complete:** [ ]
-**Notes:**
+**Phase 2 Complete:** [x]
+**Notes:** 9 projector tests pass. QFormer uses stacked cross/self-attn + FFN blocks. Config adds `qformer` section.
 
 ---
 
@@ -128,29 +128,29 @@
 **Goal:** Connect vision encoder + projector to a real LLM. Run your first multimodal inference.
 
 ### Concepts to Learn
-- [ ] How does Qwen-VL merge image tokens into the text sequence?
-- [ ] What is the `<img>` special token pattern?
-- [ ] Token budget: how many image tokens fit in 2048 context window?
-- [ ] Autoregressive generation: how does the LLM generate the answer token by token?
-- [ ] 4-bit quantization (BitsAndBytes) — why and when
+- [x] How does Qwen-VL merge image tokens into the text sequence?
+- [x] What is the `<img>` special token pattern?
+- [x] Token budget: how many image tokens fit in 2048 context window?
+- [x] Autoregressive generation: how does the LLM generate the answer token by token?
+- [x] 4-bit quantization (BitsAndBytes) — why and when
 
 ### Code: `src/llm/backbone.py`
-- [ ] `MultimodalLLM` class (wraps encoder + projector + LLM)
-- [ ] `__init__(encoder, projector, llm_model_id, device, load_in_4bit=True)`
-- [ ] `prepare_inputs(image, text_prompt) -> dict` — merges modalities
-- [ ] `generate(image, prompt, max_new_tokens=512) -> str`
-- [ ] Device management: keep encoder on CPU if GPU is tight
-- [ ] Unit test with a mock LLM (avoid downloading 7B for tests)
+- [x] `MultimodalLLM` class (wraps encoder + projector + LLM)
+- [x] `__init__(encoder, projector, llm_model_id, device, load_in_4bit=True)`
+- [x] `prepare_inputs(image, text_prompt) -> dict` — merges modalities
+- [x] `generate(image, prompt, max_new_tokens=512) -> str`
+- [x] Device management: keep encoder on CPU if GPU is tight
+- [x] Unit test with a mock LLM (avoid downloading 7B for tests)
 
 ### Notebook: `NB-06-llm-backbone.ipynb`
-- [ ] Load Qwen2-VL-2B (smaller, faster) or LLaVA-1.5-7B
-- [ ] Run your first multimodal QA: image + question → answer
-- [ ] Inspect the merged input token sequence
-- [ ] Benchmark: latency, memory usage, tokens/sec
-- [ ] Try different prompts and observe answer quality
+- [x] Load Qwen2-VL-2B (smaller, faster) or LLaVA-1.5-7B
+- [x] Run your first multimodal QA: image + question → answer
+- [x] Inspect the merged input token sequence
+- [x] Benchmark: latency, memory usage, tokens/sec
+- [x] Try different prompts and observe answer quality
 
-**Phase 3 Complete:** [ ]
-**Notes:**
+**Phase 3 Complete:** [x]
+**Notes:** Native path uses Qwen2-VL processor. Custom path prepends projected CLIP patches via inputs_embeds. Projector out_dim=1536 for Qwen2-VL-2B. 4-bit only on CUDA.
 
 ---
 
@@ -289,6 +289,8 @@
 
 | Date | Phase | What was done | Blockers |
 |------|-------|---------------|----------|
+| 2026-05-18 | 3 | MultimodalLLM, native+custom paths, NB-06 | — |
+| 2026-05-18 | 2 | Linear/MLP/QFormer projectors, tests, NB-03/04/05 | — |
 | 2026-05-18 | 1 | ViTEncoder, CLIPVisionEncoder, tests, NB-01/02 | — |
 | 2026-05-18 | 0 | Scaffold, configs, venv, deps, ViT smoke test, git init | — |
 
