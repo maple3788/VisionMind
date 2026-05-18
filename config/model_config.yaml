@@ -1,0 +1,17 @@
+vision_encoder:
+  model_id: openai/clip-vit-large-patch14
+  output_dim: 1024
+  freeze: true
+
+projector:
+  type: mlp  # linear | mlp | qformer
+  in_dim: 1024
+  hidden_dim: 2048
+  out_dim: 4096
+  num_layers: 2
+
+llm:
+  model_id: Qwen/Qwen2-VL-2B-Instruct
+  load_in_4bit: true
+  max_new_tokens: 512
+  temperature: 0.7

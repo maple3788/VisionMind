@@ -1,0 +1,19 @@
+# Phase 7 — API + OpenWebUI deployment stack
+# Uncomment and configure when serving is implemented.
+
+# services:
+#   api:
+#     build: ..
+#     ports: ["8000:8000"]
+#     volumes: ["../model_cache:/model_cache"]
+#     environment:
+#       - HF_TOKEN=${HF_TOKEN}
+#       - API_KEY=${API_KEY}
+#
+#   openwebui:
+#     image: ghcr.io/open-webui/open-webui:main
+#     ports: ["3000:8080"]
+#     environment:
+#       - OPENAI_API_BASE_URL=http://api:8000/v1
+#       - OPENAI_API_KEY=${API_KEY}
+#     depends_on: [api]

@@ -1,0 +1,18 @@
+training:
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 2e-4
+  num_epochs: 3
+  warmup_ratio: 0.03
+  save_steps: 100
+  eval_steps: 100
+
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules:
+    - q_proj
+    - v_proj
+    - o_proj
+    - gate_proj
