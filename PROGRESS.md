@@ -3,9 +3,9 @@
 > **How to use:** Check off items as you complete them. Add notes under each item. Never skip a phase.
 > Update `Current Phase` and `Last Updated` each session.
 
-**Current Phase:** 4 — End-to-End Inference Pipeline
-**Last Updated:** 2026-05-18
-**Overall:** `████░░░░░░` 40%
+**Current Phase:** 7 — API & OpenWebUI Deployment
+**Last Updated:** 2026-05-19
+**Overall:** `███████░░░` 70%
 
 ---
 
@@ -69,7 +69,7 @@
 - [x] Experiment: what happens when you encode an image vs a description of it?
 
 **Phase 1 Complete:** [x]
-**Notes:** ViTEncoder uses ViTImageProcessor. CLIP similarity uses projected L2-normalized features. 7 unit tests pass with mocked HF models.
+**Notes:** ViTEncoder uses `ViTImageProcessor`. CLIP `compute_similarity` and notebooks unwrap `get_image_features` / `get_text_features` via `_as_clip_embedding_tensor()` for Transformers ≥5.5 (returns `BaseModelOutputWithPooling`, not a raw tensor). NB-02 loads Commons `File:` pages via the MediaWiki API with a descriptive `User-Agent` and `Referer` for `upload.wikimedia.org`. Encoder tests: 10 (includes CLIP tensor helper tests).
 
 ---
 
@@ -120,7 +120,7 @@
 - [x] Production `src/projectors/qformer.py` integration cell
 
 **Phase 2 Complete:** [x]
-**Notes:** 9 projector tests pass. QFormer uses stacked cross/self-attn + FFN blocks. Config adds `qformer` section.
+**Notes:** 9 projector tests. QFormer uses stacked cross/self-attn + FFN blocks. Config adds `qformer` section. Full suite: `pytest tests/` (encoders + projectors + LLM mocks).
 
 ---
 
@@ -150,7 +150,7 @@
 - [x] Try different prompts and observe answer quality
 
 **Phase 3 Complete:** [x]
-**Notes:** Native path uses Qwen2-VL processor. Custom path prepends projected CLIP patches via inputs_embeds. Projector out_dim=1536 for Qwen2-VL-2B. 4-bit only on CUDA.
+**Notes:** `MultimodalLLM` in `src/llm/backbone.py`: native path uses Qwen2-VL processor; custom path prepends projected CLIP patch tokens as `inputs_embeds` before text embeddings. `projector.out_dim` must match `text_config.hidden_size` (1536 for Qwen2-VL-2B in `config/model_config.yaml`). BitsAndBytes 4-bit load only when `device=cuda`. Tests: `tests/test_llm.py` (mocked, no full model download).
 
 ---
 
@@ -158,22 +158,22 @@
 **Goal:** Clean, unified pipeline class. Ready for real use cases.
 
 ### Code: `src/pipeline/multimodal_qa.py`
-- [ ] `MultimodalQAPipeline` class
-- [ ] `answer(image_path_or_url, question, history=None) -> str`
-- [ ] Multi-turn conversation support (history)
-- [ ] Image input types: PIL, file path, URL, base64
-- [ ] Graceful fallback: text-only question (no image)
-- [ ] Streaming output support (generator)
+- [x] `MultimodalQAPipeline` class
+- [x] `answer(question, image=..., history=None) -> str`
+- [x] Multi-turn conversation support (history)
+- [x] Image input types: PIL, file path, URL, base64
+- [x] Graceful fallback: text-only question (no image)
+- [x] Streaming output support (generator)
 
 ### Notebook: `NB-07-end-to-end-inference.ipynb`
-- [ ] Full pipeline demo: load → ask → answer
-- [ ] Multi-turn QA conversation demo
-- [ ] Edge cases: blurry image, wrong language, very long question
-- [ ] Side-by-side: Linear projector vs MLP vs Q-Former quality comparison
-- [ ] Error handling walkthrough
+- [x] Full pipeline demo: load → ask → answer
+- [x] Multi-turn QA conversation demo
+- [x] Edge cases: blurry image, wrong language, very long question
+- [x] Side-by-side: Linear projector vs MLP vs Q-Former quality comparison
+- [x] Error handling walkthrough
 
-**Phase 4 Complete:** [ ]
-**Notes:**
+**Phase 4 Complete:** [x]
+**Notes:** `MultimodalQAPipeline` wraps `MultimodalLLM.from_config`; `_load_image` handles PIL/path/URL/base64 with Wikimedia `Referer`. `config/model_config.yaml` adds `pipeline` section. Tests: `tests/test_pipeline.py` (15, mocked). Optional Gradio cell in NB-07.
 
 ---
 
@@ -181,36 +181,36 @@
 **Goal:** Adapt the model to a specific domain (e.g. medical imaging, document QA).
 
 ### Concepts to Learn
-- [ ] What is LoRA? How does rank decomposition work?
-- [ ] Why fine-tune only the projector + LoRA adapters, not the full model?
-- [ ] What is instruction tuning? What format does the data need to be in?
-- [ ] Evaluation: BLEU, CIDEr, VQA accuracy
+- [x] What is LoRA? How does rank decomposition work?
+- [x] Why fine-tune only the projector + LoRA adapters, not the full model?
+- [x] What is instruction tuning? What format does the data need to be in?
+- [x] Evaluation: BLEU, CIDEr, VQA accuracy
 
 ### Dataset Preparation: `src/data/dataset.py`
-- [ ] `MultimodalQADataset(data_dir, split)` class
-- [ ] Data format: `{"image": path, "question": str, "answer": str}`
-- [ ] Collate function for batching mixed-length sequences
-- [ ] Data augmentation: random crop, color jitter, horizontal flip
-- [ ] Train/val/test split logic
+- [x] `MultimodalQADataset(data_dir, split)` class
+- [x] Data format: `{"image": path, "question": str, "answer": str}`
+- [x] Collate function for batching mixed-length sequences
+- [x] Data augmentation: random crop, color jitter, horizontal flip
+- [x] Train/val/test split logic
 
 ### Code: `src/llm/lora_finetune.py`
-- [ ] `apply_lora(model, r=8, alpha=16, target_modules=[...]) -> model`
-- [ ] Training loop with `accelerate`
-- [ ] Gradient checkpointing enabled
-- [ ] Checkpoint saving every N steps
-- [ ] Evaluation loop with VQA accuracy metric
-- [ ] `merge_and_save(model, output_dir)` — merge LoRA weights
+- [x] `apply_lora(model, r=8, alpha=16, target_modules=[...]) -> model`
+- [x] Training loop with `accelerate`
+- [x] Gradient checkpointing enabled
+- [x] Checkpoint saving every N steps
+- [x] Evaluation loop with VQA accuracy metric
+- [x] `merge_and_save(model, output_dir)` — merge LoRA weights
 
 ### Notebook: `NB-08-lora-finetuning.ipynb`
-- [ ] Dataset loading and visualization (sample 10 examples)
-- [ ] LoRA config walkthrough: what does each hyperparameter do?
-- [ ] Training run on small dataset (50-100 examples to see it works)
-- [ ] Loss curve plotting
-- [ ] Before/after comparison: base model vs fine-tuned on domain examples
-- [ ] Export fine-tuned model
+- [x] Dataset loading and visualization (sample 10 examples)
+- [x] LoRA config walkthrough: what does each hyperparameter do?
+- [x] Training run on small dataset (50-100 examples to see it works)
+- [x] Loss curve plotting
+- [x] Before/after comparison: base model vs fine-tuned on domain examples
+- [x] Export fine-tuned model
 
-**Phase 5 Complete:** [ ]
-**Notes:**
+**Phase 5 Complete:** [x]
+**Notes:** `src/data/preprocessing.py` + `dataset.py` (JSONL, augment, 80/10/10 split). `LoRATrainer` uses native Qwen2-VL path; `apply_lora` trains PEFT adapters + projector (does not blanket-freeze `llm` after LoRA). `config/train_config.yaml` adds `augment` section. Tests: `test_data.py`, `test_lora.py` (51 total). NB-08 builds demo data under `data/sample_vqa/`.
 
 ---
 
@@ -218,28 +218,28 @@
 **Goal:** Ground answers in a knowledge base. Combine retrieval with generation.
 
 ### Concepts to Learn
-- [ ] How does RAG work for text? (query → retrieve → augment → generate)
-- [ ] How does multimodal RAG differ? (image query, image+text retrieval)
-- [ ] Vector databases: FAISS vs Chroma vs Qdrant
-- [ ] CLIP as a retrieval encoder: embed images and text in the same space
+- [x] How does RAG work for text? (query → retrieve → augment → generate)
+- [x] How does multimodal RAG differ? (image query, image+text retrieval)
+- [x] Vector databases: FAISS vs Chroma vs Qdrant
+- [x] CLIP as a retrieval encoder: embed images and text in the same space
 
 ### Code: `src/pipeline/rag_retriever.py`
-- [ ] `MultimodalRetriever(index_path, encoder)` class
-- [ ] `index_documents(docs: List[dict])` — embed and store
-- [ ] `retrieve(query_image=None, query_text=None, top_k=3) -> List[dict]`
-- [ ] Supports image query, text query, or both
-- [ ] FAISS index backend
+- [x] `MultimodalRetriever(index_path, encoder)` class
+- [x] `index_documents(docs: List[dict])` — embed and store
+- [x] `retrieve(query_image=None, query_text=None, top_k=3) -> List[dict]`
+- [x] Supports image query, text query, or both
+- [x] FAISS index backend
 
 ### Notebook: `NB-09-rag-multimodal.ipynb`
-- [ ] Build a small image+text knowledge base (20-50 documents)
-- [ ] Embed and index with CLIP
-- [ ] Query with a new image → retrieve relevant docs
-- [ ] Inject retrieved context into LLM prompt
-- [ ] Compare: RAG vs no-RAG answer quality
-- [ ] Visualize retrieved documents alongside query
+- [x] Build a small image+text knowledge base (20-50 documents)
+- [x] Embed and index with CLIP
+- [x] Query with a new image → retrieve relevant docs
+- [x] Inject retrieved context into LLM prompt
+- [x] Compare: RAG vs no-RAG answer quality
+- [x] Visualize retrieved documents alongside query
 
-**Phase 6 Complete:** [ ]
-**Notes:**
+**Phase 6 Complete:** [x]
+**Notes:** `MultimodalRetriever` uses CLIP projected embeddings + FAISS IndexFlatIP (combined/image/text indices). Hybrid query fuses image+text weights. `MultimodalQAPipeline` accepts optional `retriever`; `answer(use_rag=True)` prepends `format_retrieval_context`. `save_index`/`load_index` persist to `data/rag_index`. Tests: `tests/test_rag.py` (7). Config `rag` section in model_config.yaml.
 
 ---
 
@@ -289,6 +289,10 @@
 
 | Date | Phase | What was done | Blockers |
 |------|-------|---------------|----------|
+| 2026-05-19 | 6 | MultimodalRetriever, pipeline RAG, NB-09, test_rag | — |
+| 2026-05-19 | 5 | Dataset, LoRA trainer, NB-08, test_data/test_lora | — |
+| 2026-05-19 | 4 | MultimodalQAPipeline, NB-07, test_pipeline.py | — |
+| 2026-05-19 | 1 | CLIP ModelOutput unwrap; NB-02 Commons API + UMAP cell fix | — |
 | 2026-05-18 | 3 | MultimodalLLM, native+custom paths, NB-06 | — |
 | 2026-05-18 | 2 | Linear/MLP/QFormer projectors, tests, NB-03/04/05 | — |
 | 2026-05-18 | 1 | ViTEncoder, CLIPVisionEncoder, tests, NB-01/02 | — |
@@ -302,6 +306,7 @@
 |----------|--------|--------|
 | Vision Encoder | CLIP ViT-L/14 | Best balance of quality and accessibility |
 | LLM | Qwen2-VL-2B (start) | Fits on 8GB GPU, good multilingual |
+| Projector `out_dim` | 1536 (matches Qwen2-VL-2B text hidden) | Required for custom `inputs_embeds` path; was 4096 in early scaffold |
 | Projector | MLP (primary) | Better than linear, simpler than Q-Former |
 | Fine-tuning | LoRA r=8 | Memory-efficient, fast to iterate |
 | Vector DB | FAISS | No server needed, easy to start |

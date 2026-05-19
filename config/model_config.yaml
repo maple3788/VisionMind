@@ -27,3 +27,15 @@ llm:
   load_in_4bit: true
   max_new_tokens: 512
   temperature: 0.7
+
+pipeline:
+  max_new_tokens: 512
+  use_native: false
+  encoder_on_cpu: false
+  request_timeout_sec: 30
+  rag_top_k: 3
+
+rag:
+  index_path: data/rag_index
+  image_weight: 0.5
+  text_weight: 0.5

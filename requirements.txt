@@ -31,6 +31,7 @@ uvicorn[standard]>=0.27.0
 python-multipart>=0.0.9
 
 # --- Utils ---
+tqdm>=4.66.0
 loguru>=0.7.0
 python-dotenv>=1.0.0
 omegaconf>=2.3.0

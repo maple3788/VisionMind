@@ -31,7 +31,7 @@ The system has 3 macro-stages:
 |---|---|---|
 | Vision Encoder | CLIP ViT-L/14 → EVA-CLIP | Industry standard, well-documented |
 | Projector | Linear → MLP → Q-Former | Build complexity incrementally |
-| LLM | Qwen2-VL-7B / LLaVA-1.5 | Open-source, good docs, Python-friendly |
+| LLM | Qwen2-VL-2B (repo default) → 7B / LLaVA-1.5 | 2B for learning and smaller GPUs; scale up when needed |
 | Fine-tuning | LoRA via PEFT | Memory-efficient, learnable |
 | Serving | vLLM / Ollama (local) | Start local, scale to vLLM |
 | UI | OpenWebUI | Docker-based, plug-and-play |
@@ -48,6 +48,7 @@ The system has 3 macro-stages:
 - **Logging:** `loguru` or standard `logging`, not bare `print()`
 - **Tests:** `pytest`, one test file per module
 - **Notebook naming:** `NB-{phase}-{topic}.ipynb` e.g. `NB-01-clip-exploration.ipynb`
+- **Notebook location:** Store under `notebooks/`; use `sys.path.insert(0, str(Path("..").resolve()))` (or equivalent) so `import src.*` works from the repo root
 
 ## Phase Map
 
@@ -66,10 +67,11 @@ Phase 8: (Stretch) Multimodal Generation output
 ## File Layout
 
 ```
-multimodal-qa/
-├── AGENT.md               ← this file
-├── PROGRESS.md            ← phase-by-phase checklist
-├── cursor_prompt.md       ← Cursor AI prompt
+VisionMind/                 ← repo root (same layout as “multimodal-qa” in prompts)
+├── AGENT.md
+├── PROGRESS.md
+├── cursor_prompt.md
+├── pytest.ini
 ├── .env.example
 ├── requirements.txt
 ├── config/
@@ -78,7 +80,7 @@ multimodal-qa/
 ├── src/
 │   ├── encoders/
 │   │   ├── __init__.py
-│   │   ├── clip_encoder.py
+│   │   ├── clip_encoder.py   # CLIPVisionEncoder + _as_clip_embedding_tensor
 │   │   └── vit_encoder.py
 │   ├── projectors/
 │   │   ├── __init__.py
@@ -87,8 +89,8 @@ multimodal-qa/
 │   │   └── qformer.py
 │   ├── llm/
 │   │   ├── __init__.py
-│   │   ├── backbone.py
-│   │   └── lora_finetune.py
+│   │   ├── backbone.py       # MultimodalLLM (Phases 3+)
+│   │   └── lora_finetune.py  # Phase 5
 │   ├── pipeline/
 │   │   ├── __init__.py
 │   │   ├── multimodal_qa.py
@@ -100,7 +102,7 @@ multimodal-qa/
 │   └── serving/
 │       ├── __init__.py
 │       └── api_server.py
-├── notebooks/
+├── notebooks/              # NB-* live here; use sys.path to import src/
 │   ├── NB-00-environment-setup.ipynb
 │   ├── NB-01-vit-exploration.ipynb
 │   ├── NB-02-clip-encoder.ipynb
@@ -115,7 +117,8 @@ multimodal-qa/
 ├── tests/
 │   ├── test_encoders.py
 │   ├── test_projectors.py
-│   └── test_pipeline.py
+│   ├── test_llm.py
+│   └── test_pipeline.py      # when Phase 4+ lands
 └── docker/
     └── docker-compose.yml
 ```
@@ -139,7 +142,7 @@ multimodal-qa/
 After each phase, you should be able to answer:
 - Phase 1: What does CLIP's vision encoder output? What is its shape?
 - Phase 2: Why do we need a projector between the encoder and LLM?
-- Phase 3: How does Qwen-VL merge vision tokens with text tokens?
+- Phase 3: How does Qwen-VL merge image tokens with text tokens? What is the difference between the **native** processor path and prepending **custom** projected vision tokens as `inputs_embeds`?
 - Phase 5: What is LoRA and why is it better than full fine-tuning here?
 - Phase 6: How does multimodal RAG differ from text-only RAG?
 
@@ -147,6 +150,9 @@ After each phase, you should be able to answer:
 
 - Don't load the full LLM into GPU until Phase 3 — use CPU or small proxies earlier
 - CLIP outputs `[batch, seq_len, hidden]` — check shapes before projecting
+- **Transformers ≥5.5:** `CLIPModel.get_image_features` / `get_text_features` may return `BaseModelOutputWithPooling`, not a `Tensor` — unwrap `pooler_output` (or use `src.encoders.clip_encoder._as_clip_embedding_tensor`) before `F.normalize` or UMAP
+- **Projector vs LLM:** MLP/Linear `out_dim` must equal the loaded model’s `text_config.hidden_size` (e.g. 1536 for Qwen2-VL-2B), not an arbitrary 4096
+- **Wikimedia Commons:** wiki page URLs are not image bytes; use the [API](https://commons.wikimedia.org/wiki/API) with a descriptive `User-Agent` (and often `Referer: https://commons.wikimedia.org/`) when fetching `upload.wikimedia.org` thumbnails
 - Q-Former has its own learnable queries — they are NOT the image patches
 - LoRA rank is a hyperparameter — start with `r=8`, tune later
 - OpenWebUI expects OpenAI-compatible API format — wrap your model accordingly
