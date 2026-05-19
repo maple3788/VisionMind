@@ -3,9 +3,9 @@
 > **How to use:** Check off items as you complete them. Add notes under each item. Never skip a phase.
 > Update `Current Phase` and `Last Updated` each session.
 
-**Current Phase:** 7 — API & OpenWebUI Deployment
+**Current Phase:** 8 — Multimodal Generation Output (Stretch)
 **Last Updated:** 2026-05-19
-**Overall:** `███████░░░` 70%
+**Overall:** `████████░░` 80%
 
 ---
 
@@ -247,27 +247,27 @@
 **Goal:** Serve the model via API. Connect to OpenWebUI for a chat interface.
 
 ### Code: `src/serving/api_server.py`
-- [ ] FastAPI app with `/v1/chat/completions` (OpenAI-compatible)
-- [ ] Multipart image upload support
-- [ ] Streaming response support (SSE)
-- [ ] Health check endpoint `/health`
-- [ ] Basic API key auth
+- [x] FastAPI app with `/v1/chat/completions` (OpenAI-compatible)
+- [x] Multipart image upload support
+- [x] Streaming response support (SSE)
+- [x] Health check endpoint `/health`
+- [x] Basic API key auth
 
 ### Docker: `docker/docker-compose.yml`
-- [ ] Service: `api` — runs FastAPI server
-- [ ] Service: `openwebui` — OpenWebUI container
-- [ ] Volume mounts for model cache
-- [ ] GPU passthrough (`runtime: nvidia`)
+- [x] Service: `api` — runs FastAPI server
+- [x] Service: `openwebui` — OpenWebUI container
+- [x] Volume mounts for model cache
+- [x] GPU passthrough (`runtime: nvidia`)
 
 ### Notebook: `NB-10-deployment.ipynb`
-- [ ] OpenWebUI setup walkthrough
-- [ ] Connect OpenWebUI to your custom API
-- [ ] Test multimodal chat in the UI
-- [ ] vLLM deployment (if GPU available): performance comparison
-- [ ] Ollama as alternative local serving option
+- [x] OpenWebUI setup walkthrough
+- [x] Connect OpenWebUI to your custom API
+- [x] Test multimodal chat in the UI
+- [x] vLLM deployment (if GPU available): performance comparison
+- [x] Ollama as alternative local serving option
 
-**Phase 7 Complete:** [ ]
-**Notes:**
+**Phase 7 Complete:** [x]
+**Notes:** `api_server.py`: `/health`, `/v1/models`, `/v1/chat/completions` (text + `image_url` base64/URL), SSE streaming, Bearer auth via `API_KEY`. Lazy pipeline load; optional `USE_RAG`. `docker/Dockerfile` + `docker-compose.yml`. Tests: `tests/test_serving.py` (7). Run: `uvicorn src.serving.api_server:app --port 8000`.
 
 ---
 
@@ -289,6 +289,7 @@
 
 | Date | Phase | What was done | Blockers |
 |------|-------|---------------|----------|
+| 2026-05-19 | 7 | FastAPI server, Docker/OpenWebUI, NB-10, test_serving | — |
 | 2026-05-19 | 6 | MultimodalRetriever, pipeline RAG, NB-09, test_rag | — |
 | 2026-05-19 | 5 | Dataset, LoRA trainer, NB-08, test_data/test_lora | — |
 | 2026-05-19 | 4 | MultimodalQAPipeline, NB-07, test_pipeline.py | — |

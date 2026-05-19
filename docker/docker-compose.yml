@@ -1,19 +1,53 @@
-# Phase 7 — API + OpenWebUI deployment stack
-# Uncomment and configure when serving is implemented.
+# VisionMind — API + OpenWebUI stack (Phase 7)
+# Usage: cp .env.example .env  &&  docker compose -f docker/docker-compose.yml up
 
-# services:
-#   api:
-#     build: ..
-#     ports: ["8000:8000"]
-#     volumes: ["../model_cache:/model_cache"]
-#     environment:
-#       - HF_TOKEN=${HF_TOKEN}
-#       - API_KEY=${API_KEY}
-#
-#   openwebui:
-#     image: ghcr.io/open-webui/open-webui:main
-#     ports: ["3000:8080"]
-#     environment:
-#       - OPENAI_API_BASE_URL=http://api:8000/v1
-#       - OPENAI_API_KEY=${API_KEY}
-#     depends_on: [api]
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ../model_cache:/model_cache
+      - ../config:/app/config:ro
+      - ../data:/app/data:ro
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - HF_HOME=/model_cache/huggingface
+      - API_KEY=${API_KEY}
+      - MODEL_ID=${MODEL_ID:-visionmind-qwen2-vl}
+      - MODEL_CONFIG_PATH=/app/config/model_config.yaml
+      - DEVICE=${DEVICE:-cuda}
+      - USE_RAG=${USE_RAG:-false}
+      - RAG_INDEX_PATH=/app/data/rag_index
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - "${OPENWEBUI_PORT:-3000}:8080"
+    environment:
+      - OPENAI_API_BASE_URL=http://api:8000/v1
+      - OPENAI_API_KEY=${API_KEY}
+      - WEBUI_NAME=VisionMind
+    volumes:
+      - openwebui_data:/app/backend/data
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  openwebui_data:
