@@ -216,3 +216,39 @@ class TestCLIPVisionEncoder:
         sim_matrix = encoder.compute_similarity(images, texts)
 
         assert sim_matrix.shape == (2, 3)
+
+
+class TestAsClipEmbeddingTensor:
+    """Tests for CLIP feature tensor extraction (HF ModelOutput compatibility)."""
+
+    def test_passes_through_tensor(self) -> None:
+        """Raw tensors are returned unchanged."""
+        from src.encoders.clip_encoder import _as_clip_embedding_tensor
+
+        x = torch.randn(2, 768)
+        assert torch.equal(_as_clip_embedding_tensor(x), x)
+
+    def test_extracts_pooler_output(self) -> None:
+        """BaseModelOutputWithPooling.pooler_output is used when present."""
+        from transformers.modeling_outputs import BaseModelOutputWithPooling
+
+        from src.encoders.clip_encoder import _as_clip_embedding_tensor
+
+        pooled = torch.randn(3, 512)
+        out = BaseModelOutputWithPooling(
+            pooler_output=pooled,
+            last_hidden_state=torch.randn(3, 10, 512),
+        )
+        got = _as_clip_embedding_tensor(out)
+        assert torch.equal(got, pooled)
+
+    def test_falls_back_to_cls_from_last_hidden(self) -> None:
+        """When pooler_output is None, use first sequence token."""
+        from transformers.modeling_outputs import BaseModelOutputWithPooling
+
+        from src.encoders.clip_encoder import _as_clip_embedding_tensor
+
+        last = torch.randn(2, 5, 128)
+        out = BaseModelOutputWithPooling(pooler_output=None, last_hidden_state=last)
+        got = _as_clip_embedding_tensor(out)
+        assert torch.equal(got, last[:, 0, :])

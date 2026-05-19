@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Union
+from typing import Any, Union
 
 import torch
 import torch.nn.functional as F
@@ -14,6 +14,43 @@ from transformers import CLIPModel, CLIPProcessor
 from src.encoders.vit_encoder import resolve_device
 
 logger = logging.getLogger(__name__)
+
+
+def _as_clip_embedding_tensor(features: Tensor | tuple[Any, ...] | Any) -> Tensor:
+    """Extract a 2D embedding tensor from CLIP ``get_*_features`` return values.
+
+    Newer ``transformers`` versions return ``BaseModelOutputWithPooling`` (or a
+    tuple wrapping it) instead of a raw ``Tensor``.
+
+    Args:
+        features: Return value from ``CLIPModel.get_image_features`` or
+            ``get_text_features``.
+
+    Returns:
+        Float tensor of shape ``[batch, embed_dim]``.
+    """
+    if isinstance(features, torch.Tensor):
+        return features
+
+    if isinstance(features, tuple):
+        if len(features) == 0:
+            raise TypeError("CLIP features tuple is empty")
+        features = features[0]
+
+    if isinstance(features, torch.Tensor):
+        return features
+
+    pooler = getattr(features, "pooler_output", None)
+    if pooler is not None:
+        return pooler
+
+    last = getattr(features, "last_hidden_state", None)
+    if last is not None:
+        return last[:, 0, :]
+
+    raise TypeError(
+        f"Cannot extract embedding tensor from CLIP output type {type(features)!r}"
+    )
 
 
 class CLIPVisionEncoder:
@@ -112,7 +149,8 @@ class CLIPVisionEncoder:
         pixel_values = inputs["pixel_values"].to(self.device)
 
         with torch.no_grad():
-            features = self.model.get_image_features(pixel_values=pixel_values)
+            raw = self.model.get_image_features(pixel_values=pixel_values)
+            features = _as_clip_embedding_tensor(raw)
 
         return F.normalize(features, dim=-1)
 
@@ -128,10 +166,11 @@ class CLIPVisionEncoder:
         attention_mask = inputs["attention_mask"].to(self.device)
 
         with torch.no_grad():
-            features = self.model.get_text_features(
+            raw = self.model.get_text_features(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
             )
+            features = _as_clip_embedding_tensor(raw)
 
         return F.normalize(features, dim=-1)
 
