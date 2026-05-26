@@ -8,6 +8,9 @@ __pycache__/
 dist/
 build/
 
+# Data
+data/
+
 # Model cache
 model_cache/
 mlruns/
