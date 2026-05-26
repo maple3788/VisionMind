@@ -335,7 +335,7 @@ class MultimodalLLM:
         )
 
         with torch.no_grad():
-            output_ids = self.language_model.generate(
+            output_ids = self.llm.generate(
                 inputs_embeds=inputs["inputs_embeds"],
                 attention_mask=inputs["attention_mask"],
                 max_new_tokens=max_new_tokens,
