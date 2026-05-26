@@ -30,7 +30,7 @@ def apply_lora(
         train_projector: If True, projector weights remain trainable.
 
     Returns:
-        The same ``MultimodalLLM`` with a PEFT-wrapped ``language_model``.
+        The same ``MultimodalLLM`` with a PEFT-wrapped full model (preserves generation infrastructure).
     """
     if not isinstance(lora_config, dict):
         lora_config = OmegaConf.to_container(lora_config, resolve=True)
@@ -45,12 +45,16 @@ def apply_lora(
         task_type="CAUSAL_LM",
     )
 
-    model.language_model = get_peft_model(model.language_model, peft_config)
+    # Wrap the full model (model.llm) instead of just language_model to preserve generation
+    model.llm = get_peft_model(model.llm, peft_config)
+    # Note: model.language_model will still access the wrapped language_model through PEFT's __getattr__
 
-    for param in model.encoder.parameters():
+    # Freeze encoder (access underlying model for CLIPVisionEncoder wrapper)
+    encoder_model = getattr(model.encoder, 'model', model.encoder)
+    for param in encoder_model.parameters():
         param.requires_grad = False
 
-    visual = getattr(model.llm, "visual", None)
+    visual = getattr(model.llm.model, "visual", None)
     if visual is not None:
         for param in visual.parameters():
             param.requires_grad = False
@@ -62,7 +66,7 @@ def apply_lora(
         for param in model.projector.parameters():
             param.requires_grad = False
 
-    trainable_lm, total_lm = count_trainable_params(model.language_model)
+    trainable_lm, total_lm = count_trainable_params(model.llm)
     trainable_proj = sum(
         p.numel() for p in model.projector.parameters() if p.requires_grad
     )
@@ -89,7 +93,7 @@ def merge_and_save(model: MultimodalLLM, output_dir: Union[str, Path]) -> Path:
     """Merge LoRA weights into the base LM and save adapter + projector.
 
     Args:
-        model: ``MultimodalLLM`` with PEFT-wrapped ``language_model``.
+        model: ``MultimodalLLM`` with PEFT-wrapped full model.
         output_dir: Directory for merged weights and projector checkpoint.
 
     Returns:
@@ -98,13 +102,16 @@ def merge_and_save(model: MultimodalLLM, output_dir: Union[str, Path]) -> Path:
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    lm = model.language_model
-    if isinstance(lm, PeftModel):
-        lm.save_pretrained(out / "lora_adapter")
-        model.language_model = lm.merge_and_unload()
+    llm = model.llm
+    if isinstance(llm, PeftModel):
+        llm.save_pretrained(out / "lora_adapter")
+        model.llm = llm.merge_and_unload()
+        # After merging, update the language_model reference if needed for subsequent operations
+        if hasattr(model.llm, 'model') and hasattr(model.llm.model, 'language_model'):
+            model.language_model = model.llm.model.language_model
         logger.info("Saved and merged LoRA adapter at {}", out / "lora_adapter")
     else:
-        logger.warning("language_model is not a PeftModel; skipping adapter merge")
+        logger.warning("llm is not a PeftModel; skipping adapter merge")
 
     torch.save(model.projector.state_dict(), out / "projector.pt")
     logger.info("Saved projector weights to {}", out / "projector.pt")
